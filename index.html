@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ONEBOX OMNI-STUDIO | THE MASTER ARCHIVE 2026</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root { --bg: #030305; --panel: #0a0a0f; --accent: #ff0055; --code: #00ff88; --safe: #00d4ff; --border: #1a1a24; --text: #e0e0e6; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: 'Consolas', monospace; }
+        body { background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; font-size: 11px; }
+
+        /* --- LAYOUT PRINCIPAL --- */
+        header { height: 50px; background: var(--panel); border-bottom: 2px solid var(--accent); display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 1000; }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; }
+        .active-screen { display: flex; }
+        .main-layout { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* --- PAINÉIS --- */
+        .sidebar { width: 220px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .inspector { width: 310px; background: var(--panel); border-left: 1px solid var(--border); padding: 15px; overflow-y: auto; }
+        #viewport { flex: 1; background: #000; position: relative; }
+
+        /* --- UI COMPONENTS --- */
+        .btn { background: var(--accent); color: #fff; border: none; padding: 7px 12px; border-radius: 2px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 10px; transition: 0.2s; }
+        .btn:hover { filter: brightness(1.2); box-shadow: 0 0 8px var(--accent); }
+        .btn-new { background: var(--safe); color: #000; }
+        .btn-tab { background: #111; border: 1px solid var(--border); color: #666; }
+        .btn-tab.active { background: var(--accent); color: #fff; }
+
+        input, select, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: var(--code); padding: 8px; margin-bottom: 10px; border-radius: 2px; }
+        .code-editor { height: 220px; font-size: 11px; line-height: 1.5; resize: vertical; border-left: 3px solid var(--code); background: #050505; }
+
+        .list-item { padding: 10px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.1s; }
+        .list-item:hover { background: rgba(255,0,85,0.1); color: var(--accent); }
+
+        /* --- OVERLAYS --- */
+        .overlay { position: absolute; inset: 15px; background: var(--panel); border: 2px solid var(--accent); z-index: 2000; display: none; flex-direction: column; border-radius: 4px; }
+        .canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; background: #080808; }
+        #pixel-canvas { background: #000; image-rendering: pixelated; border: 1px solid #333; cursor: crosshair; box-shadow: 0 0 20px #000; }
+
+        /* --- GAMEPLAY --- */
+        #chat-ui { position: absolute; bottom: 20px; left: 20px; width: 260px; height: 180px; background: rgba(0,0,0,0.8); border: 1px solid var(--accent); display: none; flex-direction: column; z-index: 3000; }
+        #chat-logs { flex: 1; overflow-y: auto; padding: 8px; }
+        #chat-input { border: none; border-top: 1px solid var(--accent); margin: 0; }
+        
+        #hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 25px; }
+        .game-card { background: #111; border: 1px solid var(--border); padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .game-card:hover { border-color: var(--accent); transform: scale(1.02); }
+    </style>
+</head>
+<body>
+
+<div id="login-screen" class="screen active-screen">
+    <div style="margin: auto; text-align: center; width: 300px;">
+        <h1 style="color: var(--accent); font-size: 40px; letter-spacing: 6px;">ONEBOX</h1>
+        <p style="opacity: 0.4; margin-bottom: 30px;">MASTER EDITION v2026.FULL</p>
+        <input type="text" id="dev-nick" placeholder="Seu Nick de Desenvolvedor">
+        <button class="btn" style="width: 100%; padding: 15px; margin-bottom: 10px;" onclick="initSystem('editor')">STUDIO CREATOR</button>
+        <button class="btn" style="width: 100%; background: #161620;" onclick="initSystem('hub')">HUB DE JOGOS</button>
+    </div>
+</div>
+
+<div id="studio-screen" class="screen">
+    <header>
+        <button class="btn btn-new" onclick="createNewProject()">+ NOVO JOGO</button>
+        <div style="width:2px; height:20px; background:#333;"></div>
+        <button class="btn btn-tab active" onclick="switchTab('scene')">CENA</button>
+        <button class="btn btn-tab" onclick="toggleOverlay('pixel-editor', true)">SPRITE EDITOR</button>
+        <button class="btn btn-tab" onclick="toggleOverlay('voxel-editor', true)">VOXEL MODELER</button>
+        <div style="flex:1"></div>
+        <select id="mode-selector" style="width: 100px; margin:0;" onchange="updateDimension()">
+            <option value="3d">MODO 3D</option>
+            <option value="2d">MODO 2D</option>
+        </select>
+        <button class="btn" style="background: var(--code); color: #000;" onclick="playTest()">▶ PLAY</button>
+        <button class="btn" onclick="publishProject()">🚀 PUBLICAR</button>
+    </header>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div style="padding: 10px; background: rgba(255,255,255,0.03); color: var(--accent);">HIERARQUIA</div>
+            <div id="hierarchy-items" style="flex:1; overflow-y:auto;"></div>
+            <div style="padding: 10px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <button class="btn" onclick="spawn('cube')">+ CUBO</button>
+                <button class="btn" onclick="spawn('sprite')">+ SPRITE</button>
+                <button class="btn" onclick="spawn('light')">+ LUZ</button>
+                <button class="btn" onclick="spawn('player')">+ PLAYER</button>
+            </div>
+        </div>
+
+        <div id="viewport">
+            <div id="pixel-editor" class="overlay">
+                <header style="background: #111;">
+                    <span>PIXEL ART STUDIO (256x256)</span>
+                    <input type="color" id="p-color" style="width:50px; margin:0; padding:0;">
+                    <button class="btn" onclick="clearCanvas()">LIMPAR</button>
+                    <button class="btn" onclick="toggleOverlay('pixel-editor', false)">CONCLUIR</button>
+                </header>
+                <div class="canvas-area">
+                    <canvas id="pixel-canvas" width="256" height="256"></canvas>
+                </div>
+            </div>
+
+            <div id="voxel-editor" class="overlay">
+                <header style="background: #111;">
+                    <span>VOXEL MODELER 3D</span>
+                    <button class="btn" onclick="toggleOverlay('voxel-editor', false)">VOLTAR</button>
+                </header>
+                <div class="canvas-area" style="flex-direction:column;">
+                    <h2>[ EDITOR DE MODELOS ATIVO ]</h2>
+                    <p>Mova o mouse e use o clique para esculpir seu modelo 3D personalizado.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="inspector" id="inspector-ui">
+            <div style="text-align: center; opacity: 0.2; margin-top: 80px;">Selecione um objeto para programar.</div>
+        </div>
+    </div>
+</div>
+
+<div id="player-screen" class="screen">
+    <div style="position: absolute; top: 15px; left: 15px; z-index: 4000; display:flex; gap:10px;">
+        <button class="btn" style="background:#333;" onclick="stopTest()">✕ SAIR</button>
+        <div id="net-indicator" style="background:rgba(0,255,136,0.2); color:var(--code); padding:8px; font-size:10px;">ESTADO: ONLINE</div>
+    </div>
+
+    <div id="chat-ui">
+        <div id="chat-logs"></div>
+        <input type="text" id="chat-input" placeholder="Enter para enviar..." onkeypress="if(event.key==='Enter') sendChat()">
+    </div>
+
+    <div id="play-target" style="flex:1; background:#000;"></div>
+</div>
+
+<div id="hub-screen" class="screen">
+    <header>
+        <button class="btn" onclick="switchS('login-screen')">VOLTAR</button>
+        <h2 style="margin-left:15px;">ONEBOX COMMUNITY HUB</h2>
+    </header>
+    <div id="hub-grid"></div>
+</div>
+
+<script>
+    /* --- DATABASE & CORE --- */
+    const firebaseConfig = { apiKey: "AIzaSyCHw9gH8El6UKSEgG8zorVraL5zWeTLSQM", databaseURL: "https://mmmmm-6cd19-default-rtdb.firebaseio.com", projectId: "mmmmm-6cd19" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let scene, camera, renderer, studioGrid;
+    let project = { objects: [], is2D: false, version: 2026 };
+    let isTest = false, keys = {}, myName = "Dev", myID = "u_" + Date.now();
+    let players = {};
+
+    /* --- INITIALIZATION --- */
+    function initSystem(mode) {
+        myName = document.getElementById('dev-nick').value || "User_" + Math.floor(Math.random()*999);
+        setupThree();
+        if(mode === 'editor') switchS('studio-screen');
+        else { switchS('hub-screen'); loadHub(); }
+    }
+
+    function setupThree() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x030305);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        studioGrid = new THREE.GridHelper(60, 60, 0xff0055, 0x111111);
+        scene.add(studioGrid);
+        
+        const sun = new THREE.DirectionalLight(0xffffff, 1);
+        sun.position.set(5, 10, 7);
+        scene.add(sun);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+        updateDimension();
+        runLoop();
+        initPixelPainter();
+    }
+
+    /* --- PROJECT MGMT --- */
+    function createNewProject() {
+        if(confirm("Deseja criar um novo jogo? Isso limpará a cena atual!")) {
+            project.objects.forEach(o => { if(o.mesh) scene.remove(o.mesh); });
+            project.objects = [];
+            updateHierarchy();
+            document.getElementById('inspector-ui').innerHTML = "";
+            alert("Nova cena criada!");
+        }
+    }
+
+    function spawn(type) {
+        const id = "ent_" + Date.now();
+        const defaultScript = type === 'player' 
+            ? "if(api.input('w')) api.move(0,0,-0.2);\nif(api.input('s')) api.move(0,0,0.2);\nif(api.input('a')) api.move(-0.2,0,0);\nif(api.input('d')) api.move(0.2,0,0);\napi.camFollow();"
+            : "api.rotate(0.01);";
+
+        const obj = {
+            id, type, name: type.toUpperCase() + "_" + project.objects.length,
+            x: 0, y: type==='player'?1:0.5, z: 0,
+            rx: 0, ry: 0, rz: 0,
+            color: type==='player' ? '#00ff88' : '#ff0055',
+            script: defaultScript
+        };
+
+        project.objects.push(obj);
+        buildMesh(obj);
+        updateHierarchy();
+    }
+
+    function buildMesh(o) {
+        if(o.mesh) scene.remove(o.mesh);
+        const geo = o.type === 'sprite' ? new THREE.PlaneGeometry(1,1) : new THREE.BoxGeometry(1,1,1);
+        const mat = new THREE.MeshStandardMaterial({ color: o.color, side: THREE.DoubleSide });
+        o.mesh = new THREE.Mesh(geo, mat);
+        scene.add(o.mesh);
+    }
+
+    function updateHierarchy() {
+        const h = document.getElementById('hierarchy-items');
+        h.innerHTML = project.objects.map(o => `
+            <div class="list-item" onclick="openInspector('${o.id}')">
+                <span style="color:${o.color}">●</span> ${o.name}
+            </div>
+        `).join('');
+    }
+
+    function openInspector(id) {
+        const o = project.objects.find(x => x.id === id);
+        const ui = document.getElementById('inspector-ui');
+        ui.innerHTML = `
+            <b style="color:var(--accent)">EDITOR DE ENTIDADE</b>
+            <label>NOME</label><input type="text" value="${o.name}" oninput="setObj('${id}','name',this.value)">
+            <label>COR HEX</label><input type="color" value="${o.color}" oninput="setObj('${id}','color',this.value)">
+            
+            <label>POSIÇÃO (X / Y / Z)</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px;">
+                <input type="number" step="0.1" value="${o.x}" oninput="setObj('${id}','x',this.value)">
+                <input type="number" step="0.1" value="${o.y}" oninput="setObj('${id}','y',this.value)">
+                <input type="number" step="0.1" value="${o.z}" oninput="setObj('${id}','z',this.value)">
+            </div>
+
+            <label>LÓGICA DO SCRIPT (MANUAL)</label>
+            <textarea id="scr-${id}" class="code-editor">${o.script}</textarea>
+            <button class="btn" style="width:100%; background:var(--code); color:#000" onclick="compile('${id}')">SALVAR LÓGICA</button>
+            <button class="btn" style="width:100%; margin-top:20px; background:#222" onclick="delObj('${id}')">DELETAR OBJETO</button>
+        `;
+    }
+
+    function setObj(id, p, v) {
+        const o = project.objects.find(x => x.id === id);
+        o[p] = (p==='color'||p==='name') ? v : parseFloat(v);
+        if(p === 'color') o.mesh.material.color.set(v);
+    }
+
+    function compile(id) {
+        project.objects.find(x => x.id === id).script = document.getElementById('scr-'+id).value;
+        alert("Script Compilado!");
+    }
+
+    function delObj(id) {
+        const o = project.objects.find(x => x.id === id);
+        scene.remove(o.mesh);
+        project.objects = project.objects.filter(x => x.id !== id);
+        updateHierarchy();
+        document.getElementById('inspector-ui').innerHTML = "";
+    }
+
+    /* --- GAME LOOP --- */
+    function runLoop() {
+        requestAnimationFrame(runLoop);
+        const win = isTest ? document.getElementById('play-target') : document.getElementById('viewport');
+        if(!win) return;
+
+        renderer.setSize(win.clientWidth, win.clientHeight);
+        camera.aspect = win.clientWidth / win.clientHeight;
+        camera.updateProjectionMatrix();
+
+        project.objects.forEach(o => {
+            if(o.mesh) {
+                o.mesh.position.set(o.x, o.y, o.z);
+                o.mesh.rotation.set(o.rx, o.ry, o.rz);
+                
+                if(isTest) {
+                    const api = {
+                        input: (k) => keys[k],
+                        move: (dx, dy, dz) => { 
+                            o.x += dx; o.y += dy; o.z += dz;
+                            if(o.type==='player') db.ref('omni_net/players/'+myID).update({x:o.x, y:o.y, z:o.z});
+                        },
+                        rotate: (v) => o.ry += v,
+                        camFollow: () => {
+                            let dist = project.is2D ? new THREE.Vector3(o.x, o.y, 12) : new THREE.Vector3(o.x, o.y+6, o.z+9);
+                            camera.position.lerp(dist, 0.1);
+                            camera.lookAt(o.x, o.y, o.z);
+                        }
+                    };
+                    try { new Function('api', o.script).bind(o)(api); } catch(e){}
+                }
+            }
+        });
+
+        if(renderer.domElement.parentElement !== win) win.appendChild(renderer.domElement);
+        renderer.render(scene, camera);
+    }
+
+    /* --- MULTIPLAYER & HUB --- */
+    function playTest(data = null) {
+        isTest = true;
+        studioGrid.visible = false;
+        if(data) project.objects = JSON.parse(data);
+        
+        switchS('player-screen');
+        document.getElementById('chat-ui').style.display = 'flex';
+        
+        db.ref('omni_net/players/'+myID).set({ n: myName, x:0, y:1, z:0 });
+        db.ref('omni_net/players').on('value', s => {
+            const val = s.val(); if(!val) return;
+            Object.keys(val).forEach(id => {
+                if(id === myID) return;
+                if(!players[id]) {
+                    players[id] = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color:0x00d4ff}));
+                    scene.add(players[id]);
+                }
+                players[id].position.set(val[id].x, val[id].y, val[id].z);
+            });
+        });
+    }
+
+    function stopTest() {
+        isTest = false;
+        studioGrid.visible = true;
+        db.ref('omni_net/players/'+myID).remove();
+        db.ref('omni_net/players').off();
+        switchS('studio-screen');
+    }
+
+    async function publishProject() {
+        const n = prompt("Título do Jogo:");
+        if(!n) return;
+        const clean = project.objects.map(o => { const {mesh, ...data} = o; return data; });
+        await db.ref('omni_hub_2026').push({ name: n, dev: myName, content: JSON.stringify(clean) });
+        alert("Jogo publicado no Hub Global!");
+    }
+
+    function loadHub() {
+        const grid = document.getElementById('hub-grid');
+        grid.innerHTML = "Conectando...";
+        db.ref('omni_hub_2026').on('value', s => {
+            grid.innerHTML = "";
+            if(!s.val()) return;
+            Object.values(s.val()).forEach(g => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerHTML = `<h3>${g.name}</h3><p>Dev: ${g.dev}</p>`;
+                card.onclick = () => playTest(g.content);
+                grid.appendChild(card);
+            });
+        });
+    }
+
+    /* --- PIXEL EDITOR LOGIC --- */
+    let pCtx, isDrawing = false;
+    function initPixelPainter() {
+        const can = document.getElementById('pixel-canvas');
+        pCtx = can.getContext('2d');
+        can.onmousedown = () => isDrawing = true;
+        window.onmouseup = () => isDrawing = false;
+        can.onmousemove = (e) => {
+            if(!isDrawing) return;
+            const r = can.getBoundingClientRect();
+            const x = Math.floor((e.clientX - r.left) / 16) * 16;
+            const y = Math.floor((e.clientY - r.top) / 16) * 16;
+            pCtx.fillStyle = document.getElementById('p-color').value;
+            pCtx.fillRect(x, y, 16, 16);
+        };
+    }
+    function clearCanvas() { pCtx.clearRect(0,0,256,256); }
+
+    /* --- UTILS --- */
+    function switchS(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.getElementById(id).classList.add('active-screen');
+    }
+
+    function toggleOverlay(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
+
+    function updateDimension() {
+        project.is2D = document.getElementById('mode-selector').value === '2d';
+        if(project.is2D) { camera.position.set(0,0,15); studioGrid.rotation.x = Math.PI/2; }
+        else { camera.position.set(10,10,10); studioGrid.rotation.x = 0; }
+        camera.lookAt(0,0,0);
+    }
+
+    window.onkeydown = e => keys[e.key.toLowerCase()] = true;
+    window.onkeyup = e => keys[e.key.toLowerCase()] = false;
+
+</script>
+</body>
+</html>
