@@ -3,151 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ONEBOX OMNI-STUDIO | PRO EDITION 2026</title>
+    <title>ONEBOX OMNI-STUDIO | MASTER DEV 2026</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #040406; --panel: #0d0d12; --accent: #ff0055; --code: #00ff88; --safe: #00d4ff; --gold: #ffcc00; --border: #1e1e2a; }
+        :root { --bg: #020204; --panel: #0a0a0f; --accent: #ff0055; --code: #00ff88; --safe: #00d4ff; --gold: #ffcc00; --border: #1a1a24; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Consolas', monospace; }
         body { background: var(--bg); color: #e0e0e6; overflow: hidden; height: 100vh; font-size: 11px; }
 
         /* --- UI ESTRUTURA --- */
-        header { height: 50px; background: var(--panel); border-bottom: 2px solid var(--accent); display: flex; align-items: center; padding: 0 15px; gap: 8px; z-index: 1000; }
+        header { height: 50px; background: var(--panel); border-bottom: 2px solid var(--accent); display: flex; align-items: center; padding: 0 15px; gap: 8px; z-index: 1000; box-shadow: 0 2px 10px #000; }
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; }
         .active-screen { display: flex; }
         .main-layout { display: flex; flex: 1; overflow: hidden; }
 
         /* --- PAINÉIS --- */
         .sidebar { width: 220px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .inspector { width: 310px; background: var(--panel); border-left: 1px solid var(--border); padding: 15px; overflow-y: auto; }
+        .inspector { width: 320px; background: var(--panel); border-left: 1px solid var(--border); padding: 15px; overflow-y: auto; }
         #viewport { flex: 1; background: #000; position: relative; }
+        
+        /* NOVO: MONITOR DE SCRIPT */
+        #script-monitor { height: 150px; background: #050508; border-top: 1px solid var(--border); padding: 10px; overflow-y: auto; color: var(--code); font-size: 10px; }
 
         /* --- COMPONENTES --- */
-        .btn { background: var(--accent); color: #fff; border: none; padding: 6px 10px; border-radius: 2px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 9px; transition: 0.2s; }
-        .btn:hover { filter: brightness(1.2); }
+        .btn { background: var(--accent); color: #fff; border: none; padding: 6px 12px; border-radius: 2px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 9px; transition: 0.2s; }
+        .btn:hover { filter: brightness(1.2); box-shadow: 0 0 10px var(--accent); }
         .btn-blue { background: var(--safe); color: #000; }
-        .btn-gold { background: var(--gold); color: #000; }
+        .btn-dark { background: #1a1a24; color: #888; }
         
-        input, select, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: var(--code); padding: 6px; margin-bottom: 8px; }
-        .code-editor { height: 180px; font-size: 10px; border-left: 3px solid var(--code); }
-
-        /* --- ASSET STORE GRID --- */
-        #store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 15px; }
-        .asset-card { background: #1a1a24; border: 1px solid var(--border); padding: 10px; text-align: center; border-radius: 4px; }
+        input, select, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: var(--code); padding: 7px; margin-bottom: 8px; }
+        .code-editor { height: 200px; font-size: 10px; border-left: 3px solid var(--code); background: #050505; }
 
         /* --- OVERLAYS --- */
-        .overlay { position: absolute; inset: 20px; background: var(--panel); border: 2px solid var(--accent); z-index: 2000; display: none; flex-direction: column; border-radius: 4px; }
+        .overlay { position: absolute; inset: 30px; background: var(--panel); border: 2px solid var(--accent); z-index: 2000; display: none; flex-direction: column; border-radius: 4px; padding: 15px; }
+        .grid-store { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .asset-card { background: #111; border: 1px solid var(--border); padding: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="login-screen" class="screen active-screen">
-    <div style="margin: auto; text-align: center; width: 300px;">
-        <h1 style="color: var(--accent); font-size: 35px; letter-spacing: 5px;">ONEBOX PRO</h1>
-        <p style="opacity: 0.4; margin-bottom: 30px;">PHYSICS & VOXEL ENGINE 2026</p>
-        <input type="text" id="dev-nick" placeholder="Nome do Dev">
-        <button class="btn" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="initEngine('editor')">ENTRAR NO STUDIO</button>
-        <button class="btn btn-blue" style="width: 100%; padding: 12px;" onclick="initEngine('hub')">COMMUNITY HUB</button>
+    <div style="margin: auto; text-align: center; width: 320px;">
+        <h1 style="color: var(--accent); font-size: 40px; letter-spacing: 5px;">ONEBOX OMNI</h1>
+        <p style="opacity: 0.4; margin-bottom: 30px;">MASTER SCRIPTING ENGINE 2026</p>
+        <input type="text" id="dev-nick" placeholder="Seu Nick de Desenvolvedor">
+        <button class="btn" style="width: 100%; padding: 15px; margin-bottom: 10px;" onclick="bootEngine('editor')">STUDIO CREATOR</button>
+        <button class="btn btn-dark" style="width: 100%; padding: 15px;" onclick="bootEngine('hub')">EXPLORAR HUB</button>
     </div>
 </div>
 
 <div id="studio-screen" class="screen">
     <header>
-        <button class="btn btn-blue" onclick="newProject()">+ NOVO</button>
-        <button class="btn" onclick="toggleOverlay('store-overlay', true)">🛒 LOJA</button>
-        <button class="btn" onclick="toggleOverlay('terrain-overlay', true)">⛰ TERRENO</button>
+        <button class="btn btn-blue" onclick="newProj()">+ NOVO JOGO</button>
+        <button class="btn btn-dark" onclick="toggleOverlay('store-win', true)">🛒 LOJA</button>
+        <button class="btn btn-dark" onclick="toggleOverlay('voxel-win', true)">⛰ TERRENO</button>
         <div style="flex:1"></div>
-        <select id="view-mode" style="width: 90px; margin:0;" onchange="syncView()">
-            <option value="3d">3D VIEW</option>
-            <option value="2d">2D VIEW</option>
+        <select id="view-sel" style="width: 100px; margin:0;" onchange="syncCam()">
+            <option value="3d">MODO 3D</option>
+            <option value="2d">MODO 2D</option>
         </select>
-        <button class="btn btn-gold" onclick="playGame()">▶ TESTAR</button>
-        <button class="btn" onclick="publish()">PUBLICAR</button>
+        <button class="btn" style="background:var(--code); color:#000" onclick="runGame()">▶ JOGAR</button>
+        <button class="btn" onclick="shareProj()">🚀 PUBLICAR</button>
     </header>
 
     <div class="main-layout">
         <div class="sidebar">
-            <div style="padding:10px; color:var(--accent); font-weight:bold;">HIERARQUIA</div>
-            <div id="h-list" style="flex:1; overflow-y:auto;"></div>
+            <div style="padding:10px; color:var(--accent); font-weight:bold; border-bottom: 1px solid #222;">HIERARQUIA</div>
+            <div id="hierarchy" style="flex:1; overflow-y:auto;"></div>
             <div style="padding:10px; display:grid; grid-template-columns:1fr 1fr; gap:5px; border-top:1px solid #222;">
-                <button class="btn" onclick="spawn('player')">+ PLAYER</button>
-                <button class="btn" onclick="spawn('cube')">+ CUBO</button>
-                <button class="btn" onclick="spawn('prop')">+ ASSET</button>
-            </div>
-        </div>
-        
-        <div id="viewport">
-            <div id="store-overlay" class="overlay">
-                <header><b>ASSET STORE</b> <button class="btn" onclick="toggleOverlay('store-overlay', false)">X</button></header>
-                <div id="store-grid">
-                    <div class="asset-card"><h4>Árvore LowPoly</h4><button class="btn btn-gold" onclick="importAsset('tree')">Importar</button></div>
-                    <div class="asset-card"><h4>NPC Inteligente</h4><button class="btn btn-gold" onclick="importAsset('npc')">Importar</button></div>
-                    <div class="asset-card"><h4>Script Gravidade</h4><button class="btn btn-gold" onclick="importAsset('phys_script')">Importar</button></div>
-                </div>
-            </div>
-
-            <div id="terrain-overlay" class="overlay">
-                <header><b>VOXEL TERRAIN SCULPTOR</b> <button class="btn" onclick="toggleOverlay('terrain-overlay', false)">X</button></header>
-                <div style="padding:20px; text-align:center;">
-                    <p>Selecione o tamanho do pincel e clique no chão para gerar montanhas de voxels.</p>
-                    <input type="range" min="1" max="5" value="1">
-                    <button class="btn btn-blue" onclick="generateBase()">Gerar Planície Base</button>
-                </div>
+                <button class="btn" onclick="spawnObj('player')">+ PLAYER</button>
+                <button class="btn" onclick="spawnObj('cube')">+ CUBO</button>
+                <button class="btn" onclick="spawnObj('sprite')">+ SPRITE</button>
             </div>
         </div>
 
-        <div class="inspector" id="ins-panel">
-            <div style="text-align:center; opacity:0.2; margin-top:100px;">Selecione um Objeto</div>
+        <div style="display:flex; flex-direction:column; flex:1;">
+            <div id="viewport">
+                <div id="store-win" class="overlay">
+                    <h3>ASSET STORE</h3><hr style="opacity:0.1; margin:10px 0;">
+                    <div class="grid-store">
+                        <div class="asset-card">NPC IA<br><button class="btn" onclick="importAs('npc')">ADD</button></div>
+                        <div class="asset-card">SISTEMA MOEDA<br><button class="btn" onclick="importAs('coin_sys')">ADD</button></div>
+                    </div>
+                    <button class="btn btn-dark" style="margin-top:auto" onclick="toggleOverlay('store-win', false)">FECHAR</button>
+                </div>
+
+                <div id="voxel-win" class="overlay">
+                    <h3>VOXEL TERRAIN</h3>
+                    <p>Gerar mapa base de voxels sólidos:</p>
+                    <button class="btn btn-blue" onclick="genTerrain()">GERAR PLANÍCIE</button>
+                    <button class="btn btn-dark" style="margin-top:auto" onclick="toggleOverlay('voxel-win', false)">VOLTAR</button>
+                </div>
+            </div>
+            
+            <div id="script-monitor">
+                <b style="color:var(--accent)">[DEBUG MONITOR]</b>
+                <div id="monitor-content">Aguardando execução...</div>
+            </div>
+        </div>
+
+        <div class="inspector" id="inspector">
+            <p style="text-align:center; opacity:0.2; margin-top:100px;">Selecione algo para inspecionar e programar.</p>
         </div>
     </div>
 </div>
 
 <div id="player-screen" class="screen">
-    <div style="position:absolute; top:10px; left:10px; z-index:3000; display:flex; gap:10px;">
-        <button class="btn" style="background:#222" onclick="stopGame()">PARAR</button>
-        <div id="stats" style="background:rgba(0,0,0,0.7); padding:5px; border-radius:4px;">Coins: 0</div>
+    <div style="position:absolute; top:15px; left:15px; z-index:3000; display:flex; gap:10px;">
+        <button class="btn" style="background:#222" onclick="exitGame()">PARAR</button>
+        <div id="hud-vars" style="background:rgba(0,0,0,0.8); padding:8px; border: 1px solid var(--accent); color:var(--code);"></div>
     </div>
-    <div id="play-view" style="flex:1; background:#000;"></div>
+    <div id="game-view" style="flex:1; background:#000;"></div>
 </div>
 
 <script>
-    // --- DATABASE CONFIG ---
+    // --- FIREBASE SETUP ---
     const firebaseConfig = { apiKey: "AIzaSyCHw9gH8El6UKSEgG8zorVraL5zWeTLSQM", databaseURL: "https://mmmmm-6cd19-default-rtdb.firebaseio.com", projectId: "mmmmm-6cd19" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let scene, camera, renderer, grid;
-    let project = { objects: [], is2D: false, globals: {} };
-    let isPlaying = false, keys = {}, myDev = "Guest", myID = "id_"+Math.random();
+    let scene, camera, renderer, studioGrid;
+    let project = { objects: [], is2D: false, vars: { score: 0, gravity: -0.05, speed: 0.15 } };
+    let isPlaying = false, keys = {}, myName = "User", myID = "u_" + Math.random();
 
     // --- ENGINE CORE ---
-    function initEngine(m) {
-        myDev = document.getElementById('dev-nick').value || "Dev_" + Math.floor(Math.random()*99);
+    function bootEngine(mode) {
+        myName = document.getElementById('dev-nick').value || "Dev_" + Math.floor(Math.random()*999);
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x040406);
+        scene.background = new THREE.Color(0x020204);
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         renderer = new THREE.WebGLRenderer({ antialias: true });
         
-        grid = new THREE.GridHelper(50, 50, 0xff0055, 0x1a1a24);
-        scene.add(grid);
+        studioGrid = new THREE.GridHelper(60, 60, 0xff0055, 0x111111);
+        scene.add(studioGrid);
         scene.add(new THREE.AmbientLight(0xffffff, 0.6));
         
-        syncView();
-        loop();
-        if(m === 'editor') switchS('studio-screen');
+        syncCam();
+        engineLoop();
+        if(mode === 'editor') switchScreen('studio-screen');
     }
 
-    function loop() {
-        requestAnimationFrame(loop);
-        const win = isPlaying ? document.getElementById('play-view') : document.getElementById('viewport');
-        if(!win) return;
+    function engineLoop() {
+        requestAnimationFrame(engineLoop);
+        const container = isPlaying ? document.getElementById('game-view') : document.getElementById('viewport');
+        if(!container) return;
 
-        renderer.setSize(win.clientWidth, win.clientHeight);
-        camera.aspect = win.clientWidth / win.clientHeight;
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
+
+        // Monitor de Variáveis em Tempo Real
+        if(isPlaying) updateMonitor();
 
         project.objects.forEach(o => {
             if(o.mesh) {
@@ -157,121 +166,119 @@
                 if(isPlaying) {
                     const api = {
                         input: (k) => keys[k],
+                        setVar: (n, v) => project.vars[n] = v,
+                        getVar: (n) => project.vars[n],
                         move: (dx, dy, dz) => {
-                            // SISTEMA DE FISICA BÁSICA (COLISÃO AABB)
-                            let nextX = o.x + dx, nextY = o.y + dy, nextZ = o.z + dz;
-                            let collided = false;
-                            project.objects.forEach(other => {
-                                if(other.id !== o.id && other.solid) {
-                                    if(Math.abs(nextX - other.x) < 1 && Math.abs(nextY - other.y) < 1 && Math.abs(nextZ - other.z) < 1) collided = true;
-                                }
+                            let nx = o.x + dx, ny = o.y + dy, nz = o.z + dz;
+                            let col = false;
+                            project.objects.forEach(e => {
+                                if(e.id !== o.id && e.solid && Math.abs(nx-e.x)<0.8 && Math.abs(ny-e.y)<0.8 && Math.abs(nz-e.z)<0.8) col = true;
                             });
-                            if(!collided) { o.x = nextX; o.y = nextY; o.z = nextZ; }
+                            if(!col) { o.x = nx; o.y = ny; o.z = nz; }
                         },
-                        save: (key, val) => { project.globals[key] = val; db.ref('omni_saves/'+myDev).set(project.globals); },
-                        load: (key) => project.globals[key],
-                        camFollow: () => { 
-                            camera.position.lerp(new THREE.Vector3(o.x, o.y+6, o.z+8), 0.1); 
-                            camera.lookAt(o.x, o.y, o.z); 
+                        save: (val) => db.ref('saves/'+myName).set(val),
+                        camFollow: () => {
+                            camera.position.lerp(new THREE.Vector3(o.x, o.y+6, o.z+8), 0.1);
+                            camera.lookAt(o.x, o.y, o.z);
                         }
                     };
-                    try { new Function('api', o.script).bind(o)(api); } catch(e){}
+                    try { new Function('api', o.script).bind(o)(api); } catch(e){ console.error(e); }
                 }
             }
         });
 
-        if(renderer.domElement.parentElement !== win) win.appendChild(renderer.domElement);
+        if(renderer.domElement.parentElement !== container) container.appendChild(renderer.domElement);
         renderer.render(scene, camera);
     }
 
-    // --- FUNÇÕES DE ASSET & TERRENO ---
-    function spawn(type) {
+    // --- SISTEMA DE SCRIPT & VARS ---
+    function updateMonitor() {
+        const mon = document.getElementById('monitor-content');
+        const hud = document.getElementById('hud-vars');
+        let varList = "";
+        for(let key in project.vars) {
+            varList += `<b>${key}</b>: ${project.vars[key]} | `;
+        }
+        mon.innerHTML = varList || "Nenhuma variável definida.";
+        hud.innerHTML = varList;
+    }
+
+    function spawnObj(type) {
         const id = "obj_" + Date.now();
         const obj = {
-            id, type, name: type.toUpperCase(),
+            id, type, name: type.toUpperCase() + "_" + project.objects.length,
             x:0, y:type==='player'?1:0.5, z:0,
-            rx:0, ry:0, rz:0,
+            rx:0, ry:0, rz:0, solid: true,
             color: type==='player' ? '#00ff88' : '#ff0055',
-            solid: true,
-            script: type==='player' ? "if(api.input('w')) api.move(0,0,-0.15);\nif(api.input('s')) api.move(0,0,0.15);\napi.camFollow();" : ""
+            script: type==='player' ? "if(api.input('w')) api.move(0,0,-api.getVar('speed'));\nif(api.input('s')) api.move(0,0,api.getVar('speed'));\napi.camFollow();" : "api.setVar('time', Date.now());"
         };
         project.objects.push(obj);
-        build(obj);
-        refresh();
+        createMesh(obj);
+        renderHierarchy();
     }
 
-    function generateBase() {
-        for(let i=-5; i<5; i++) {
-            for(let j=-5; j<5; j++) {
-                const id = "voxel_"+i+"_"+j;
-                const v = { id, type:'cube', name:'Voxel', x:i, y:0, z:j, rx:0, ry:0, rz:0, color:'#111', solid:true, script:'' };
-                project.objects.push(v);
-                build(v);
-            }
-        }
-        refresh();
-        alert("Terreno Voxel Gerado!");
-    }
-
-    function importAsset(assetType) {
-        if(assetType === 'phys_script') {
-            alert("Script de Gravidade adicionado à sua biblioteca!");
-        } else {
-            spawn('prop');
-            alert(assetType + " importado com sucesso!");
-        }
-    }
-
-    // --- UI & DATA ---
-    function build(o) {
+    function createMesh(o) {
         if(o.mesh) scene.remove(o.mesh);
-        o.mesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color: o.color}));
+        const geo = o.type === 'sprite' ? new THREE.PlaneGeometry(1,1) : new THREE.BoxGeometry(1,1,1);
+        const mat = new THREE.MeshStandardMaterial({color: o.color, side: THREE.DoubleSide});
+        o.mesh = new THREE.Mesh(geo, mat);
         scene.add(o.mesh);
     }
 
-    function refresh() {
-        document.getElementById('h-list').innerHTML = project.objects.map(o => `
-            <div class="list-item" style="padding:8px; border-bottom:1px solid #1a1a24; cursor:pointer;" onclick="inspect('${o.id}')">${o.name}</div>
+    function renderHierarchy() {
+        document.getElementById('hierarchy').innerHTML = project.objects.map(o => `
+            <div class="list-item" style="padding:10px; border-bottom:1px solid #111; cursor:pointer" onclick="openIns('${o.id}')">${o.name}</div>
         `).join('');
     }
 
-    function inspect(id) {
+    function openIns(id) {
         const o = project.objects.find(x => x.id === id);
-        document.getElementById('ins-panel').innerHTML = `
-            <b>INSPECTOR: ${o.name}</b>
-            <label>NOME</label><input type="text" value="${o.name}" oninput="setO('${id}','name',this.value)">
-            <label>COR</label><input type="color" value="${o.color}" oninput="setO('${id}','color',this.value)">
-            <label>SÓLIDO (FÍSICA)</label>
-            <select onchange="setO('${id}','solid',this.value === 'true')">
-                <option value="true" ${o.solid?'selected':''}>ATIVO</option>
-                <option value="false" ${!o.solid?'selected':''}>DESATIVO</option>
+        document.getElementById('inspector').innerHTML = `
+            <b style="color:var(--accent)">INSPECTOR</b>
+            <label>NOME</label><input type="text" value="${o.name}" oninput="updateO('${id}','name',this.value)">
+            <label>COR</label><input type="color" value="${o.color}" oninput="updateO('${id}','color',this.value)">
+            <label>FÍSICA (SÓLIDO)</label>
+            <select onchange="updateO('${id}','solid',this.value==='true')">
+                <option value="true" ${o.solid?'selected':''}>SIM</option>
+                <option value="false" ${!o.solid?'selected':''}>NÃO</option>
             </select>
-            <label>SCRIPT MANUAL</label>
-            <textarea class="code-editor" id="sc-${id}">${o.script}</textarea>
-            <button class="btn" style="width:100%; background:var(--code); color:#000;" onclick="saveSc('${id}')">SALVAR LÓGICA</button>
-            <button class="btn" style="width:100%; margin-top:20px; background:#222;" onclick="del('${id}')">DELETAR</button>
+            <label>SCRIPT LÓGICA</label>
+            <textarea class="code-editor" id="txt-${id}">${o.script}</textarea>
+            <button class="btn" style="width:100%; background:var(--code); color:#000" onclick="compileSc('${id}')">SALVAR SCRIPT</button>
+            <button class="btn" style="width:100%; margin-top:20px; background:#222" onclick="removeObj('${id}')">DELETAR</button>
         `;
     }
 
-    function setO(id, p, v) { const o = project.objects.find(x => x.id === id); o[p] = v; if(p==='color') o.mesh.material.color.set(v); }
-    function saveSc(id) { project.objects.find(x => x.id === id).script = document.getElementById('sc-'+id).value; }
-    function del(id) { const o = project.objects.find(x => x.id === id); scene.remove(o.mesh); project.objects = project.objects.filter(x => x.id !== id); refresh(); }
+    function updateO(id, p, v) { const o = project.objects.find(x => x.id === id); o[p] = v; if(p==='color') o.mesh.material.color.set(v); }
+    function compileSc(id) { project.objects.find(x => x.id === id).script = document.getElementById('txt-'+id).value; alert("Script Compilado!"); }
+    
+    // --- TERRENO & UTILS ---
+    function genTerrain() {
+        for(let x=-10; x<10; x++) {
+            for(let z=-10; z<10; z++) {
+                const v = { id: 'v'+x+z, type:'cube', name:'Terrain', x, y:0, z, rx:0, ry:0, rz:0, solid:true, color:'#111', script:'' };
+                project.objects.push(v); createMesh(v);
+            }
+        }
+        renderHierarchy();
+        toggleOverlay('voxel-win', false);
+    }
 
-    function switchS(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen')); document.getElementById(id).classList.add('active-screen'); }
-    function toggleOverlay(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
-    function syncView() { 
-        project.is2D = document.getElementById('view-mode').value === '2d';
+    function newProj() { if(confirm("Limpar tudo?")) location.reload(); }
+    function switchScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen')); document.getElementById(id).classList.add('active-screen'); }
+    function toggleOverlay(id, s) { document.getElementById(id).style.display = s ? 'flex' : 'none'; }
+    function syncCam() { 
+        project.is2D = document.getElementById('view-sel').value === '2d';
         camera.position.set(project.is2D?0:10, project.is2D?0:10, 15);
         camera.lookAt(0,0,0);
     }
 
-    function playGame() { isPlaying = true; grid.visible = false; switchS('player-screen'); }
-    function stopGame() { isPlaying = false; grid.visible = true; switchS('studio-screen'); }
+    function runGame() { isPlaying = true; studioGrid.visible = false; switchScreen('player-screen'); }
+    function exitGame() { isPlaying = false; studioGrid.visible = true; switchScreen('studio-screen'); }
 
     window.onkeydown = e => keys[e.key.toLowerCase()] = true;
     window.onkeyup = e => keys[e.key.toLowerCase()] = false;
 
-    initEngine('login');
 </script>
 </body>
 </html>
